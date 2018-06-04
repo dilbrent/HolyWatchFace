@@ -21,11 +21,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -35,8 +38,11 @@ import android.text.format.Time;
 import android.view.SurfaceHolder;
 
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import android.os.PowerManager;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
@@ -66,34 +72,34 @@ public class HolyWatchface extends CanvasWatchFaceService {
 
         private final String[] tensNames = {
                 "",
-                " TEN",
-                " TWENTY",
-                " THIRTY",
-                " FORTY",
-                " FIFTY",
+                " Ten",
+                " Twenty",
+                " Thirty",
+                " Forty",
+                " Fifty",
         };
 
         private final String[] numNames = {
                 "",
-                "ONE",
-                "TWO",
-                "THREE",
-                "FOUR",
-                "FIVE",
-                "SIX",
-                "SEVEN",
-                "EIGHT",
-                "NINE",
-                "TEN",
-                "ELEVEN",
-                "TWELVE",
-                "THIRTEEN",
-                "FOURTEEN",
-                "FIFTEEN",
-                "SIXTEEN",
-                "SEVENTEEN",
-                "EIGHTEEN",
-                "NINETEEN"
+                "One",
+                "Two",
+                "Three",
+                "Four",
+                "Five",
+                "Six",
+                "Seven",
+                "Eight",
+                "Nine",
+                "Ten",
+                "Eleven",
+                "Twelve",
+                "Thirteen",
+                "Fourteen",
+                "Fifteen",
+                "Sixteen",
+                "Seventeen",
+                "Eighteen",
+                "Nineteen"
         };
 
         String textHolyShit;
@@ -132,9 +138,15 @@ public class HolyWatchface extends CanvasWatchFaceService {
          */
         boolean mLowBitAmbient;
 
+        protected PowerManager.WakeLock mWakeLock;
+
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+            final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            this.mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
+            this.mWakeLock.acquire();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(HolyWatchface.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
@@ -148,9 +160,9 @@ public class HolyWatchface extends CanvasWatchFaceService {
             textFucking = getResources().getString(R.string.text_fucking);
             textMotherfucker = getResources().getString(R.string.text_mother);
 
-            typefaceBold = Typeface.createFromAsset(getAssets(), "bold.ttf");
-            typefaceMedium = Typeface.createFromAsset(getAssets(), "medium.ttf");
-            typefaceLightItalic = Typeface.createFromAsset(getAssets(), "mediumitalic.ttf");
+            typefaceBold = Typeface.createFromAsset(getAssets(), "DJB Chalk It Up.ttf");
+            typefaceMedium = Typeface.createFromAsset(getAssets(), "DJB Chalk It Up.ttf");
+            typefaceLightItalic = Typeface.createFromAsset(getAssets(), "DJB Chalk It Up.ttf");
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.analog_background));
@@ -174,7 +186,7 @@ public class HolyWatchface extends CanvasWatchFaceService {
             mTextLightItalicPaint.setTextSize(90.0f);
 
             mTextMediumPaint = new Paint();
-            mTextMediumPaint.setColor(resources.getColor(R.color.color_text));
+            mTextMediumPaint.setColor(resources.getColor(R.color.color_border));
             mTextMediumPaint.setAntiAlias(true);
             mTextMediumPaint.setTypeface(typefaceMedium);
             mTextMediumPaint.setTextSize(28.0f);
@@ -186,6 +198,7 @@ public class HolyWatchface extends CanvasWatchFaceService {
 
         @Override
         public void onDestroy() {
+            this.mWakeLock.release();
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
             super.onDestroy();
         }
@@ -218,6 +231,9 @@ public class HolyWatchface extends CanvasWatchFaceService {
             updateTimer();
         }
 
+        private Bitmap bg = BitmapFactory.decodeResource(getResources(), R.drawable.chalkboard);
+        private Rect src = new Rect(0, 0, bg.getWidth(), bg.getHeight());
+
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             mTime.setToNow();
@@ -227,32 +243,58 @@ public class HolyWatchface extends CanvasWatchFaceService {
             if(rectFSeconds == null)
                 rectFSeconds = new RectF(bounds);
 
-            canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
+            if(isInAmbientMode())
+                canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
+            else {
+                //Bitmap bg = BitmapFactory.decodeResource(getResources(), R.drawable.chalkboard);
+                //Rect src = new Rect(0, 0, bg.getWidth(), bg.getHeight());
+                canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
+                //canvas.drawBitmap(bg, src, bounds, new Paint());
+            }
 
-            if(!isInAmbientMode()){
-                for(int i = 0 ; i < mTime.second ;  i++)
+            if(false && !isInAmbientMode()){
+                for(int i = 45 ; i < mTime.second+45 ;  i++)
                     canvas.drawArc(rectFSeconds, (i * 6) + 1 , 5 ,false, mSecondsPaint);
             }
 
-            mTextMediumPaint.getTextBounds(textHolyShit, 0, textHolyShit.length(), textBounds);
-            canvas.drawText(textHolyShit, centerX - (textBounds.width() / 2), (3 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextMediumPaint);
+            //mTextMediumPaint.getTextBounds(textHolyShit, 0, textHolyShit.length(), textBounds);
+            //canvas.drawText(textHolyShit, centerX - (textBounds.width() / 2), (3 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextMediumPaint);
 
-            String hour = getHoursText(mTime.hour);
-            mTextLightItalicPaint.setTextSize(60.0f);
+            String hour = mTime.format("%l:%M").trim();//getHoursText(mTime.hour);
+            mTextLightItalicPaint.setTextSize(120.0f);
             mTextLightItalicPaint.getTextBounds(hour, 0, hour.length(), textBounds);
-            canvas.drawText(hour, centerX - (textBounds.width() / 2), (5 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextLightItalicPaint);
+            canvas.drawText(hour, centerX - (textBounds.width() / 2), (3 * bounds.height() / 13 + textBounds.height() / 2) * 1.65f, mTextLightItalicPaint);
 
-            mTextBoldPaint.setTextSize(40.0f);
-            mTextBoldPaint.getTextBounds(textFucking, 0, textFucking.length(), textBounds);
-            canvas.drawText(textFucking, centerX - (textBounds.width() / 2), (7 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextBoldPaint);
+            //String wday=mTime.weekDay+"";
+            //mTextLightItalicPaint.getTextBounds(wday, 0, hour.length(), textBounds);
+            //canvas.drawText(wday, centerX - (textBounds.width() / 2), (10 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextLightItalicPaint);
 
-            String minutes = getMinutesText(mTime.minute);
-            mTextLightItalicPaint.setTextSize(40.0f);
-            mTextLightItalicPaint.getTextBounds(minutes, 0, minutes.length(), textBounds);
-            canvas.drawText(minutes, centerX - (textBounds.width() / 2), (9 * bounds.height() / 13 + textBounds.height() / 2) * 0.87f, mTextLightItalicPaint);
+            //mTextBoldPaint.setTextSize(40.0f);
+            //mTextBoldPaint.getTextBounds(textFucking, 0, textFucking.length(), textBounds);
+            //canvas.drawText(textFucking, centerX - (textBounds.width() / 2), (7 * bounds.height() / 13 + textBounds.height() / 2) * 0.9f, mTextBoldPaint);
 
-            mTextMediumPaint.getTextBounds(textMotherfucker, 0, textMotherfucker.length(), textBounds);
-            canvas.drawText(textMotherfucker, centerX - (textBounds.width() / 2), (10 * bounds.height() / 13 + textBounds.height() / 2) * 0.92f, mTextMediumPaint);
+            String minutes = mTime.format("%A (%p)");//getMinutesText(mTime.minute);
+            mTextMediumPaint.setTextSize(30.0f);
+            mTextMediumPaint.getTextBounds(minutes, 0, minutes.length(), textBounds);
+            canvas.drawText(minutes, centerX - (textBounds.width() / 2), (5 * bounds.height() / 13 + textBounds.height() / 2) * .42f, mTextMediumPaint);
+
+            //if(!isInAmbientMode())
+            //{
+                String seconds = mTime.format("%b %d, %Y");//getMinutesText(mTime.second);
+                mTextBoldPaint.setTextSize(50.0f);
+                mTextBoldPaint.getTextBounds(seconds, 0, seconds.length(), textBounds);
+                canvas.drawText(seconds, centerX - (textBounds.width() / 2), (7 * bounds.height() / 13 + textBounds.height() / 2) * .5f , mTextBoldPaint);
+            //}
+
+            //mTextMediumPaint.getTextBounds(textMotherfucker, 0, textMotherfucker.length(), textBounds);
+            //canvas.drawText(textMotherfucker, centerX - (textBounds.width() / 2), (10 * bounds.height() / 13 + textBounds.height() / 2) * 0.92f, mTextMediumPaint);
+
+
+            //IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+            //Intent batteryStatus = context.registerReceiver(null, ifilter);
+            //int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            //int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            //float batteryPct = level / (float)scale;
         }
 
         private String getMinutesText(int minutes){
