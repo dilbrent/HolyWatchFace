@@ -1,17 +1,7 @@
 # HolyWatchFace
-Holy Shit Watchface
-
-# Download
-
-[Play Store Link](https://play.google.com/store/apps/details?id=co.mobiwise.holywatchface)
-
-# Screenshot
-
-![alt tag](https://raw.githubusercontent.com/iammert/HolyWatchFace/master/art/screen.png)
-
+Holy Chalkboard Watchface :)
 
 # NOTE
-
-It was just a night challange for me. It might not be compatible with all android wear devices.
+My fork of a different, very clever watch face.  I replaced the display with a chalkboard font, made a few minor fixes, changed the lock process to not burn battery on Wear24 and removed a few profanities. :)
 
 
